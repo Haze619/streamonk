@@ -68,6 +68,15 @@ class Account
 
     }
 
+    private function validatePassword($pw, $pw2)
+    {
+        if ($pw != $pw2) {
+            array_push($this->errorArray, Constants::$passwordsDontMatch);
+            return;
+        }
+
+    }
+
     public function getError($error)
     {
         if (in_array($error, $this->errorArray)) {
