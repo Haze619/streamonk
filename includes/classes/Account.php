@@ -15,6 +15,54 @@ class Account
         $this->validateLastName($ln);
         $this->validateUsername($un);
         $this->validateEmails($em, $em2);
+        $this->validatePassword($pw, $pw2);
+
+        if (empty($this->errorArray)) {
+            return $this->insertUserDetails($fn, $ln, $un, $em, $pw);
+        }
+
+        return false;
+    }
+
+    public function login($un, $pw)
+    {
+        $pw = hash("sha512", $pw);
+
+        $query = $this->con->prepare("SELECT * FROM users WHERE username=:un AND password=:pw");
+
+
+        $query->bindValue(":un", $un);
+        $query->bindValue(":pw", $pw);
+
+        $query->execute();
+
+        if ($query->rowCount() == 1) {
+            return true;
+        }
+
+        array_push($this->errorArray, Constants::$loginFailed);
+
+        return false;
+
+    }
+
+    private function insertUserDetails($fn, $ln, $un, $em, $pw)
+    {
+        $pw = hash("sha512", $pw);
+
+        $query = $this->con->prepare("INSERT INTO users (firstName,lastName,username,email,password)
+                                        VALUES (:fn,:ln,:un,:em,:pw)");
+
+        $query->bindValue(":fn", $fn);
+        $query->bindValue(":ln", $ln);
+        $query->bindValue(":un", $un);
+        $query->bindValue(":em", $em);
+        $query->bindValue(":pw", $pw);
+
+        //DEBUG: var_dump($query->errorInfo());
+
+        return $query->execute();
+
     }
 
     private function validateFirstName($fn)
@@ -25,7 +73,7 @@ class Account
     }
     private function validateLastName($fn)
     {
-        if (strlen($fn) < 2 || strlen($fn) > 25) {
+        if (strlen($fn) < 1 || strlen($fn) > 25) {
             array_push($this->errorArray, Constants::$LastNameCharacters);
         }
     }
@@ -75,12 +123,16 @@ class Account
             return;
         }
 
+        if (strlen($pw) < 2 || strlen($pw) > 25) {
+            array_push($this->errorArray, Constants::$passwordLength);
+        }
+
     }
 
     public function getError($error)
     {
         if (in_array($error, $this->errorArray)) {
-            return $error;
+            return "<span class='errorMessage'>$error</span>";
         }
     }
 
