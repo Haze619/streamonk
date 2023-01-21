@@ -26,13 +26,27 @@ class CategoryContainers
         return $html . "<div>";
     }
 
-    private function getCategoryHtml($sqlData, $title, $tvShows, $movies)
+    public function showCategory($categoryId, $title = null, $id = null)
+    {
+        $query = $this->con->prepare("SELECT * FROM categories WHERE id=:id");
+        $query->bindValue(":id", $categoryId);
+        $query->execute();
+
+        $html = "<div class='previewCategories noScroll'> ";
+
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $html .= $this->getCategoryHtml($row, $title, true, true, $id);
+        }
+        return $html . "<div>";
+    }
+
+    private function getCategoryHtml($sqlData, $title, $tvShows, $movies, $id = null)
     {
         $categoryId = $sqlData["id"];
         $title = $title == null ? $sqlData["name"] : $title;
 
         if ($tvShows && $movies) {
-            $entities = EntityProvider::getEntities($this->con, $categoryId, 30);
+            $entities = EntityProvider::getEntities($this->con, $categoryId, 30, $id);
         } else if ($tvShows) {
             //Get tvshow entity
         } else {
@@ -54,7 +68,7 @@ class CategoryContainers
                         <h3>$title</h3>
                     </a>
 
-                    <div class='entities'>
+                    <div class='entities scrollbars_none'>
                         $entitiesHtml
                     </div>
                 </div>";
